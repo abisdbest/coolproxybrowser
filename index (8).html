@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body, html {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        
+        #url-input {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 400px;
+            height: 40px;
+            padding: 10px;
+            font-size: 16px;
+            border: none;
+            border-radius: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            background-color: #f8f8f8;
+            color: #333;
+            outline: none;
+            transition: box-shadow 0.3s ease;
+        }
+        
+        #url-input:focus {
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+        
+        #web-view {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+    <input type="text" id="url-input" placeholder="Enter URL" autofocus>
+    <iframe id="web-view"></iframe>
+
+    <script>
+        const urlInput = document.getElementById('url-input');
+        const webView = document.getElementById('web-view');
+
+        // Set default language to English
+        webView.setAttribute('lang', 'en');
+
+        const loadWebsite = () => {
+            const url = urlInput.value;
+            const proxyUrl = 'https://api.codetabs.com/v1/proxy/?quest=' + url;
+
+            // Make an HTTP request through the proxy to fetch the website content
+            fetch(proxyUrl)
+                .then(response => response.text())
+                .then(content => {
+                    // Set the iframe source to display the fetched website content
+                    webView.srcdoc = content;
+
+                    // Reset the input field
+                    urlInput.value = url;
+                })
+                .catch(error => {
+                    console.error('Error fetching website:', error);
+                });
+        };
+
+        const handleInputKeyPress = event => {
+            if (event.key === 'Enter') {
+                loadWebsite();
+            }
+        };
+
+        urlInput.addEventListener('keypress', handleInputKeyPress);
+
+        // Listen for click events on links within the iframe
+        webView.addEventListener('load', () => {
+            const links = webView.contentWindow.document.getElementsByTagName('a');
+            for (let i = 0; i < links.length; i++) {
+                links[i].addEventListener('click', e => {
+                    e.preventDefault();
+                    const clickedUrl = links[i].getAttribute('href');
+                    const currentUrl = urlInput.value;
+                    let finalUrl = '';
+
+                    if (clickedUrl.startsWith('http://') || clickedUrl.startsWith('https://')) {
+                        finalUrl = clickedUrl;
+                    } else {
+                        const currentUrlObj = new URL(currentUrl);
+                        finalUrl = currentUrlObj.origin + clickedUrl;
+                    }
+
+                    urlInput.value = finalUrl;
+                    loadWebsite();
+                });
+            }
+        });
+        
+        // Initial load
+        loadWebsite();
+    </script>
+</body>
+</html>
